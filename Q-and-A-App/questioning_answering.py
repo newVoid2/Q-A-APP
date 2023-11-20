@@ -91,3 +91,11 @@ if __name__ == "__main__":
                 vector_store = create_embeddings(chunks)
                 st.session_state.vs = vector_store
                 st.success('File upload, chunked and embedded successfully.')
+
+    query = st.text_input('Ask a question about the content of your file:')   
+    if query:
+        if 'vs' in st.session_state:
+            vector_store = st.session_state.vs
+            st.write(f'k: {k}')
+            answer = ask_and_get_answer(vector_store, query, k)
+            st.text_area('LLM Answer:', value=answer)
