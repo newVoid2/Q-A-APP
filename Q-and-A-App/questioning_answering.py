@@ -1,6 +1,6 @@
 import streamlit as st
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import chroma
+from langchain.vectorstores.chroma import Chroma
 import os
 
 # document loader
@@ -33,7 +33,7 @@ def chunk_data(data, chunk_size=256, chunk_overlap=20):
 
 def create_embeddings(chunks):
     embeddings = OpenAIEmbeddings()
-    vector_store = chroma.from_documents(chunks, embeddings)
+    vector_store = Chroma.from_documents(chunks, embeddings)
     return vector_store
 
 # Calculating Cost
@@ -74,3 +74,20 @@ if __name__ == "__main__":
         k = st.number_input('K:', min_value=1, max_value=20, value=3)
         add_data = st.button('Add Data')
 
+        if file_upload and add_data:
+            with st.spinner('Reading, chunk and embedding file ...'):
+                bytes_data = file_upload.read()
+                file_name = os.path.join('./', file_upload.name)
+                with open(file_name, 'wb') as f:
+                    f.write(bytes_data)
+                
+                data = load_document(file_name)
+                chunks = chunk_data(data, chunk_size=chunk_size)
+                st.write(f'Chunk size: {chunk_size}, Chunks: {len(chunks)}')
+
+                tokens, embedding_cost = calculate_embedding_cost(chunks)
+                st.write(f'Embedding cost: ${embedding_cost:.4f}')
+
+                vector_store = create_embeddings(chunks)
+                st.session_state.vs = vector_store
+                st.success('File upload, chunked and embedded successfully.')
