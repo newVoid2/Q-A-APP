@@ -57,104 +57,20 @@ def ask_and_get_answer(vector_store, query, k=3):
     return answer
 
 
-# ### Running Code
-data = load_document('./constitution.pdf')
-# print(data[1].page_content)
-# print(data[10].metadata)
-print(f'You have {len(data)} pages in your data.')
-print(f'There are {len(data[11].page_content)} characters in the page ')
+if __name__ == "__main__":
+    from dotenv import load_dotenv, find_dotenv
+    load_dotenv(find_dotenv(), override=True)
 
+    st.title('OpenAI with langchain')
+    st.subheader('LLM Question-Answering Application 🤖')
 
-
-data2 = load_document('./World_History.docx')
-print(data2[0].page_content)
-
-
-
-data3 = load_from_wikipedia('GPT-4', 'fr')
-print(data3[0].page_content)
-
-
-
-chunks = chunk_data(data)
-print(len(chunks))
-print(chunks[10].page_content)
-
-
-print_embedding_cost(chunks)
-
-
-
-delete_pinecone_index()
-
-
-
-index_name = 'askadocument'
-vector_store = insert_or_fetch_embeddings(index_name) 
-
-
-
-query = 'What is the whole document about?'
-answer = ask_and_get_answer(vector_store, query)
-print(answer)
-
-
-import time 
-i = 1
-print('Write Quit or Exit to quit.')
-while True:
-    query = input(f'Question #{i}: ')
-    i = i + 1
-    if query.lower() in ['quit', 'exit']:
-        print('Bye Bye ... see you later!')
-        time.sleep(2)
-        break
-    
-    answer = ask_and_get_answer(vector_store, query)
-    print(f'\nAnswer: {answer}')
-    print(f'\n {"-" * 50} \n')
-
-
-delete_pinecone_index()
-
-
-
-data = load_from_wikipedia('ChatGPT', 'es')
-chunks = chunk_data(data)
-index_name = 'chatgpt'
-vector_store = insert_or_fetch_embeddings(index_name)
-
-
-
-# query = "Qué es el chat gpt"
-# query = "Cuándo se lanzó gpt"
-query = "Qué es InstructGPT"
-answer = ask_and_get_answer(vector_store, query)
-print(answer)
-
-
-
-# asking with memory
-chat_history = []
-query = "What is the last bill of rights in the US Constitution?"
-result, chat_history = ask_with_memory(vector_store, query, chat_history)
-print(result['answer'])
-print(chat_history)
-
-
-
-query = "How many amendments are in the US Constitution"
-result, chat_history = ask_with_memory(vector_store, query, chat_history)
-print(result['answer'])
-print(chat_history)
-
-
-
-query = "Multiply that number by 2"
-result, chat_history = ask_with_memory(vector_store, query, chat_history)
-print(result['answer'])
-print(chat_history)
-
-
-
+    with st.sidebar:
+        api_key = st.text_input('OpenAI API Key:', type='password')
+        if api_key:
+            os.environ['OPENAI_API_KEY'] = api_key
+        
+        file_upload = st.file_uploader('Upload a file:', type=['pdf', 'docx', 'txt'])
+        chunk_size = st.number_input('Chunk size:', min_value=100, max_value=2048, value=512)
+        k = st.number_input('K:', min_value=1, max_value=20, value=3)
+        add_data = st.button('Add Data')
 
