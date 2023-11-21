@@ -1,6 +1,6 @@
 import streamlit as st
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores.chroma import Chroma
+from langchain.vectorstores import Chroma
 import os
 
 # document loader
@@ -56,6 +56,10 @@ def ask_and_get_answer(vector_store, query, k=3):
     
     return answer
 
+def clear_history():
+    if 'history' in st.session_state:
+        del st.session_state['history']
+
 
 if __name__ == "__main__":
     from dotenv import load_dotenv, find_dotenv
@@ -63,16 +67,15 @@ if __name__ == "__main__":
 
     st.title('OpenAI with langchain')
     st.subheader('LLM Question-Answering Application 🤖')
+    with st.expander('Instructions'):
+        st.text('Use the sidebar to upload your document to the app which use ChaptGPT-4 to \nscan and answer all relevant questions. The chunk size determine the number of \nchunks and the k value determine how many chunks to view when generating \nan answer. It ideal to increase the k value to increase the chance of the AI to \ngenerate the right response.')
+    st.divider()
 
     with st.sidebar:
-        api_key = st.text_input('OpenAI API Key:', type='password')
-        if api_key:
-            os.environ['OPENAI_API_KEY'] = api_key
-        
         file_upload = st.file_uploader('Upload a file:', type=['pdf', 'docx', 'txt'])
-        chunk_size = st.number_input('Chunk size:', min_value=100, max_value=2048, value=512)
-        k = st.number_input('K:', min_value=1, max_value=20, value=3)
-        add_data = st.button('Add Data')
+        chunk_size = st.number_input('Chunk size:', min_value=100, max_value=2048, value=512, on_change=clear_history)
+        k = st.number_input('K:', min_value=1, max_value=20, value=3, on_change=clear_history)
+        add_data = st.button('Add Data', on_click=clear_history)
 
         if file_upload and add_data:
             with st.spinner('Reading, chunk and embedding file ...'):
@@ -92,18 +95,17 @@ if __name__ == "__main__":
                 st.session_state.vs = vector_store
                 st.success('File upload, chunked and embedded successfully.')
 
-    query = st.text_input('Ask a question about the content of your file:')   
+    query = st.text_input('Ask a question about the content of your file:', placeholder='What is the file about?')   
     if query:
         if 'vs' in st.session_state:
             vector_store = st.session_state.vs
-            st.write(f'k: {k}')
             answer = ask_and_get_answer(vector_store, query, k)
             st.text_area('LLM Answer:', value=answer)
 
-    st.divider()
-    if 'history' not in st.session_state:
-        st.session_state.history = ''
-    value = f'Q: {query} \nA: {answer}'
-    st.session_state.history = f'{value} \n {"-" * 100} \n {st.session_state.history}'
-    h = st.session_state.history 
-    st.text_area(label='Chat History', value=h, key='history', height=400)
+        st.divider()
+        if 'history' not in st.session_state:
+            st.session_state.history = ''
+        value = f'Q: {query} \nA: {answer}'
+        st.session_state.history = f'{value} \n {"-" * 100} \n {st.session_state.history}'
+        h = st.session_state.history 
+        st.text_area(label='Chat History', value=h, key='history', height=400)
